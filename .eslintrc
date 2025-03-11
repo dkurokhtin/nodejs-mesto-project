@@ -1,5 +1,5 @@
-    {
-        "env": {
+{
+    "env": {
         "es2021": true,
         "node": true
     },
@@ -34,6 +34,7 @@
             "error",
             "ignorePackages",
             {
+                "allow": ["_id"], 
                 "js": "never",
                 "ts": "never"
             }
