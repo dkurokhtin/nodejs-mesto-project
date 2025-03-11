@@ -1,4 +1,3 @@
-
 import winston from 'winston';
 import expressWinston from 'express-winston';
 
@@ -16,4 +15,3 @@ export const errorLogger = expressWinston.errorLogger({
   ],
   format: winston.format.json(),
 });
-

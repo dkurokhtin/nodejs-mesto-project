@@ -1,33 +1,30 @@
 import express from 'express';
-import router from './routes';
 import mongoose from 'mongoose';
-import { requestLogger, errorLogger } from './middlewares/logger';
-import { errors } from 'celebrate';
+
+import dotenv from 'dotenv';
 import helmet from 'helmet';
-import { addUserToRequest } from './middlewares/userMiddleware';
+import router from './routes/routes';
+import { requestLogger, errorLogger } from './middlewares/logger';
+import addUserToRequest from './middlewares/userMiddleware';
+import { errorHandler } from './middlewares/errorHandler';
+
 const app = express();
-const { PORT = 3000 , MONGODB_URL = 'mongodb://localhost:27017/mydb' } = process.env;
-mongoose.set('strictQuery', true); 
-mongoose.connect(MONGODB_URL);
 
+dotenv.config();
+const { PORT, MONGODB_URL } = process.env;
+mongoose.set('strictQuery', true);
+mongoose.connect(String(MONGODB_URL));
 
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
-
-app.use(helmet()); 
+app.use(express.urlencoded({ extended: false })); // подключаем middleware для парсинга urlencoded
+app.use(express.json()); // подключаем middleware для парсинга json
+app.use(helmet()); // подключаем helmet для защиты от известных веб-уязвимостей
 app.use(requestLogger); // подключаем логер запросов
-
-app.use(addUserToRequest);
-
+app.use(addUserToRequest); // подключаем middleware для добавления пользователя в запрос
 app.use('/', router); // запускаем роутер
-
 app.use(errorLogger); // подключаем логер ошибок
-app.use(errors()); // обработчик ошибок celebrate
-
-app.use(express.static('public'));
-
-
-
+app.use(errorHandler); // подключаем middleware для обработки ошибок
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Сервер запущен на порту ${PORT}`);
 });
+
+export default app;

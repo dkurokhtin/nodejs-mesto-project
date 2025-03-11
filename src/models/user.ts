@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 // Опишем схему:
 const userSchema = new mongoose.Schema({
   name: {
@@ -14,8 +14,8 @@ const userSchema = new mongoose.Schema({
   avatar: {
     type: String,
     required: true,
-  }
+  },
 });
 
 // создаём модель и экспортируем её
-export default mongoose.model('user', userSchema); 
+export default mongoose.model('user', userSchema);

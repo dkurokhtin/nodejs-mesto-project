@@ -1,96 +1,113 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import Card from '../models/cards';
 import { STATUS_CODES, ERROR_MESSAGES } from '../utils/constants';
+import { CastErrorHandler } from '../middlewares/errorHandler';
 
 // Получить все карточки
-export const getAllCards = (req: Request, res: Response) => {
+export const getAllCards = (req: Request, res: Response, next: NextFunction) => {
   Card.find({})
     .then((cards) => res.send(cards))
-    .catch(() => res.status(STATUS_CODES.INTERNAL_SERVER_ERROR)
-      .send({ message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR }));
+    .catch(() => next({
+      status: STATUS_CODES.INTERNAL_SERVER_ERROR,
+      message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
+    }));
 };
 
 // Создать карточку
-export const createCard = (req: Request, res:Response) => {
+export const createCard = (req: Request, res:Response, next: NextFunction) => {
   const { name, link } = req.body;
   const owner = req.user?._id;
 
   Card.create({ name, link, owner })
-    .then((card) => Card.findById(card._id).populate('owner'))
-    .then((cardWithOwner) => {
-      if (!cardWithOwner) {
-        return res.status(STATUS_CODES.NOT_FOUND)
-          .send({ message: ERROR_MESSAGES.CARD_NOT_FOUND });
+    .then((card) => {
+      if (!card) {
+        return next({
+          status: STATUS_CODES.BAD_REQUEST,
+          message: ERROR_MESSAGES.BAD_REQUEST,
+        });
       }
-      res.send(cardWithOwner);
+      return res.send(card);
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(STATUS_CODES.BAD_REQUEST)
-          .send({ message: ERROR_MESSAGES.BAD_REQUEST });
+        next({
+          status: STATUS_CODES.BAD_REQUEST,
+          message: ERROR_MESSAGES.BAD_REQUEST,
+        });
       } else {
-        res.status(STATUS_CODES.INTERNAL_SERVER_ERROR)
-          .send({ message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
+        next({
+          status: STATUS_CODES.INTERNAL_SERVER_ERROR,
+          message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
+        });
       }
     });
 };
 
 // Удалить карточку
-export const deleteCard = (req: Request, res: Response) => {
+export const deleteCard = (req: Request, res: Response, next: NextFunction) => {
   const { cardId } = req.params;
-  Card.findByIdAndDelete({_id:cardId})
+  Card.findByIdAndDelete({ _id: cardId })
     .then((card) => {
       if (card) {
         res.send(card);
       } else {
-        res.status(STATUS_CODES.NOT_FOUND)
-          .send({ message: ERROR_MESSAGES.NOT_FOUND });
+        next({
+          status: STATUS_CODES.NOT_FOUND,
+          message: ERROR_MESSAGES.CARD_NOT_FOUND,
+        });
       }
     })
-    .catch((err) => res.status(STATUS_CODES.BAD_REQUEST)
-      .send({ message: ERROR_MESSAGES.BAD_REQUEST }));
+    .catch((err) => {
+      CastErrorHandler(err, next);
+    });
 };
 
 // Добавить лайк
-export const addLike = (req: Request, res: Response) => {
-  const {cardId} = req.params;
-  const userId = req.user?._id;
-
-  Card.findByIdAndUpdate(
-    {  _id:cardId },
-    { $addToSet: { likes: userId } },
-    { new: true }
-  )
-    .then((card) => {
-      if (card) {
-        res.send(card);
-      } else {
-        res.status(STATUS_CODES.NOT_FOUND)
-          .send({ message: ERROR_MESSAGES.NOT_FOUND});
-      }
-    })
-    .catch((err) => res.status(STATUS_CODES.BAD_REQUEST)
-      .send({ message: ERROR_MESSAGES.NOT_FOUND}));
-};
-
-// Удалить лайк
-export const deleteLike = (req: Request, res:Response) => {
+export const addLike = (req: Request, res: Response, next: NextFunction) => {
   const { cardId } = req.params;
   const userId = req.user?._id;
 
   Card.findByIdAndUpdate(
-    {  _id:cardId },
-    { $pull: { likes: userId } },
-    { new: true }
+    { _id: cardId },
+    { $addToSet: { likes: userId } },
+    { new: true },
   )
     .then((card) => {
       if (card) {
         res.send(card);
       } else {
-        res.status(STATUS_CODES.NOT_FOUND)
-          .send({ message: ERROR_MESSAGES.NOT_FOUND });
+        next({
+          status: STATUS_CODES.NOT_FOUND,
+          message: ERROR_MESSAGES.INVALID_CARD_ID,
+        });
       }
     })
-    .catch((err) => res.status(STATUS_CODES.BAD_REQUEST)
-      .send({ message: ERROR_MESSAGES.BAD_REQUEST }));
+    .catch((err) => {
+      CastErrorHandler(err, next);
+    });
+};
+
+// Удалить лайк
+export const deleteLike = (req: Request, res:Response, next: NextFunction) => {
+  const { cardId } = req.params;
+  const userId = req.user?._id;
+
+  Card.findByIdAndUpdate(
+    { _id: cardId },
+    { $pull: { likes: userId } },
+    { new: true },
+  )
+    .then((card) => {
+      if (card) {
+        res.send(card);
+      } else {
+        next({
+          status: STATUS_CODES.NOT_FOUND,
+          message: ERROR_MESSAGES.INVALID_CARD_ID,
+        });
+      }
+    })
+    .catch((err) => {
+      CastErrorHandler(err, next);
+    });
 };
