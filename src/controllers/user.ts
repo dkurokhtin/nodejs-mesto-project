@@ -7,6 +7,7 @@ import { BadRequestError } from '../errors/BadRequest';
 import { NotFoundError } from '../errors/NotFoundError';
 import { CustomError } from '../errors/CustomError';
 import { ForbiddenError } from '../errors/ForbiddenError';
+import { ConflictError } from '../errors/ConflictError';
 
 export const login = (req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body;
@@ -39,6 +40,8 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
     .catch((err) => {
       if (err.name === 'ValidationError') {
         next(new BadRequestError(ERROR_MESSAGES.BAD_REQUEST));
+      } else if (err.code === 11000) {
+        next(new ConflictError(ERROR_MESSAGES.DUPLICATE_EMAIL));
       } else {
         next(err);
       }

@@ -36,12 +36,12 @@ const userSchema = new mongoose.Schema({
   about: {
     type: String,
     required: false,
-    default: 'Исследователь',
+
   },
   avatar: {
     type: String,
     required: false,
-    default: `https://pictures.s3.yandex.net/resources/images/avatar${Math.random()}`,
+    default: () => `https://pictures.s3.yandex.net/resources/images/avatar${Math.random()}`,
   },
 });
 

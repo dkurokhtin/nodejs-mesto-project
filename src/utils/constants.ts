@@ -11,6 +11,7 @@ export const STATUS_CODES = {
 } as const;
 
 export const ERROR_MESSAGES = {
+  DUPLICATE_EMAIL: 'Пользователь с таким email уже существует',
   NOT_FOUND: 'Запрашиваемый ресурс не найден',
   BAD_REQUEST: 'Переданы некорректные данные',
   INTERNAL_SERVER_ERROR: 'На сервере произошла ошибка',
