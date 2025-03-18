@@ -50,7 +50,7 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
 export const getUserById = (req: Request, res: Response, next: NextFunction) => {
   const { userId } = req.params;
 
-  User.findById(userId).orFail(new NotFoundError(ERROR_MESSAGES.USER_NOT_FOUND))
+  User.findById(userId).select('-password').orFail(new NotFoundError(ERROR_MESSAGES.USER_NOT_FOUND))
     .then((user) => {
       res.send(user);
     })
@@ -65,7 +65,7 @@ export const getUserById = (req: Request, res: Response, next: NextFunction) => 
 
 export const getCurrentUser = (req: Request, res: Response, next: NextFunction) => {
   const { _id } = req.user;
-  User.findById(_id).orFail(new NotFoundError(ERROR_MESSAGES.USER_NOT_FOUND))
+  User.findById(_id).select('-password').orFail(new NotFoundError(ERROR_MESSAGES.USER_NOT_FOUND))
     .then((user) => {
       res.send(user);
     })
@@ -74,7 +74,7 @@ export const getCurrentUser = (req: Request, res: Response, next: NextFunction) 
 
 // Получить всех пользователей
 export const getAllUsers = (req: Request, res: Response, next: NextFunction) => {
-  User.find({}).orFail(new CustomError(STATUS_CODES.NOT_FOUND, 'Коллекция пользователей не найдена'))
+  User.find({}).select('-password').orFail(new CustomError(STATUS_CODES.NOT_FOUND, 'Коллекция пользователей не найдена'))
     .then((users) => res.send(users))
     .catch(next);
 };
