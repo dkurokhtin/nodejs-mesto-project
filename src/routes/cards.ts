@@ -10,4 +10,5 @@ router.post('/cards', createCard); // Создание карточки
 router.delete('/cards/:cardId', deleteCard); // Удаление карточки
 router.put('/cards/:cardId/likes', addLike); // Добавление лайка
 router.delete('/cards/:cardId/likes', deleteLike); // Удаление лайка
+
 export default router;

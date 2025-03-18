@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import Card from '../models/cards';
 import { STATUS_CODES, ERROR_MESSAGES } from '../utils/constants';
-import { CastErrorHandler } from '../middlewares/errorHandler';
 
 // Получить все карточки
 export const getAllCards = (req: Request, res: Response, next: NextFunction) => {
@@ -16,9 +15,8 @@ export const getAllCards = (req: Request, res: Response, next: NextFunction) => 
 // Создать карточку
 export const createCard = (req: Request, res:Response, next: NextFunction) => {
   const { name, link } = req.body;
-  const owner = req.user?._id;
 
-  Card.create({ name, link, owner })
+  Card.create({ name, link, owner: req.user._id })
     .then((card) => {
       if (!card) {
         return next({
@@ -44,28 +42,34 @@ export const createCard = (req: Request, res:Response, next: NextFunction) => {
 };
 
 // Удалить карточку
-export const deleteCard = (req: Request, res: Response, next: NextFunction) => {
-  const { cardId } = req.params;
-  Card.findByIdAndDelete({ _id: cardId })
-    .then((card) => {
-      if (card) {
-        res.send(card);
-      } else {
-        next({
-          status: STATUS_CODES.NOT_FOUND,
-          message: ERROR_MESSAGES.CARD_NOT_FOUND,
-        });
-      }
-    })
-    .catch((err) => {
-      CastErrorHandler(err, next);
-    });
-};
+export const deleteCard = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const card = await Card.findById(req.params.cardId)
+      .orFail(new Error('NotFound'));
 
+    if (card.owner.toString() !== req.user._id) {
+      next({
+        status: STATUS_CODES.FORBIDDEN,
+        message: ERROR_MESSAGES.FORBIDDEN,
+      });
+    }
+
+    await Card.deleteOne({ _id: card._id });
+    res.send({ message: 'Карточка успешно удалена' });
+  } catch (err) {
+    if (err instanceof Error && err.message === 'NotFound') {
+      next({
+        status: STATUS_CODES.NOT_FOUND,
+        message: ERROR_MESSAGES.CARD_NOT_FOUND,
+      });
+    }
+    next(err);
+  }
+};
 // Добавить лайк
 export const addLike = (req: Request, res: Response, next: NextFunction) => {
   const { cardId } = req.params;
-  const userId = req.user?._id;
+  const userId = req.user._id;
 
   Card.findByIdAndUpdate(
     { _id: cardId },
@@ -82,15 +86,13 @@ export const addLike = (req: Request, res: Response, next: NextFunction) => {
         });
       }
     })
-    .catch((err) => {
-      CastErrorHandler(err, next);
-    });
+    .catch(next);
 };
 
 // Удалить лайк
 export const deleteLike = (req: Request, res:Response, next: NextFunction) => {
   const { cardId } = req.params;
-  const userId = req.user?._id;
+  const userId = req.user._id;
 
   Card.findByIdAndUpdate(
     { _id: cardId },
@@ -107,7 +109,5 @@ export const deleteLike = (req: Request, res:Response, next: NextFunction) => {
         });
       }
     })
-    .catch((err) => {
-      CastErrorHandler(err, next);
-    });
+    .catch(next);
 };

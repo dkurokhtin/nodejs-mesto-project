@@ -1,9 +1,11 @@
-import * as express from 'express';
-
-declare module 'express' {
- export interface Request extends express.Request {
-    user?: {
-      _id: string;
-    };
+declare global {
+  namespace Express {
+    export interface Request {
+      user: {
+        _id: string;
+      };
+    }
   }
 }
+// to make the file a module and avoid the TypeScript error
+export {};
