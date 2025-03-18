@@ -1,8 +1,8 @@
 import { Response, NextFunction } from 'express';
 import type { Request } from 'express';
 import jwt from 'jsonwebtoken';
-import { ERROR_MESSAGES, STATUS_CODES } from '../utils/constants';
-import { CustomError } from '../utils/errors';
+import { ERROR_MESSAGES } from '../utils/constants';
+import { UnauthorizedError } from '../errors/UnauthorizedError';
 
 const extractBearerToken = (header: string) => header.replace('Bearer ', '');
 
@@ -11,7 +11,7 @@ export default (req: Request, res: Response, next: NextFunction) => {
   try {
     const authenticationToken = req.headers.authorization;
     if (!authenticationToken?.startsWith('Bearer ')) {
-      throw new CustomError(STATUS_CODES.UNAUTHORIZED, ERROR_MESSAGES.UNAUTHORIZED);
+      throw new UnauthorizedError(ERROR_MESSAGES.UNAUTHORIZED);
     }
 
     const token = extractBearerToken(authenticationToken);

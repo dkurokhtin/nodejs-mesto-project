@@ -3,6 +3,10 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/user';
 import { STATUS_CODES, ERROR_MESSAGES } from '../utils/constants';
+import { BadRequestError } from '../errors/BadRequest';
+import { ConflictError } from '../errors/ConflictError';
+import { NotFoundError } from '../errors/NotFoundError';
+import { CustomError } from '../errors/CustomError';
 
 export const login = (req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body;
@@ -19,7 +23,7 @@ export const login = (req: Request, res: Response, next: NextFunction) => {
     .catch(next);
 };
 
-export const signup = (req: Request, res: Response, next: NextFunction) => {
+export const createUser = (req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body;
   return bcrypt.hash(password, 10)
     .then((hash: string) => User.create({
@@ -32,32 +36,35 @@ export const signup = (req: Request, res: Response, next: NextFunction) => {
         email: user.email,
       });
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new ConflictError(ERROR_MESSAGES.CONFLICT));
+      } else {
+        next(err);
+      }
+    });
 };
 
 // Получить пользователя по ID
 export const getUserById = (req: Request, res: Response, next: NextFunction) => {
   const { userId } = req.params;
 
-  User.findById(userId)
+  User.findById(userId).orFail(new NotFoundError(ERROR_MESSAGES.USER_NOT_FOUND))
     .then((user) => {
       res.send(user);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        next({ status: STATUS_CODES.BAD_REQUEST, message: ERROR_MESSAGES.BAD_REQUEST });
+        next(new BadRequestError(ERROR_MESSAGES.INVALID_USER_ID));
       } else {
-        next({
-          status: STATUS_CODES.INTERNAL_SERVER_ERROR,
-          message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
-        });
+        next(err);
       }
     });
 };
 
 export const getCurrentUser = (req: Request, res: Response, next: NextFunction) => {
   const { _id } = req.user;
-  User.findById(_id).orFail(new Error('NotFound'))
+  User.findById(_id).orFail(new NotFoundError(ERROR_MESSAGES.USER_NOT_FOUND))
     .then((user) => {
       res.send(user);
     })
@@ -66,32 +73,9 @@ export const getCurrentUser = (req: Request, res: Response, next: NextFunction) 
 
 // Получить всех пользователей
 export const getAllUsers = (req: Request, res: Response, next: NextFunction) => {
-  User.find({})
+  User.find({}).orFail(new CustomError(STATUS_CODES.NOT_FOUND, 'Коллекция пользователей не найдена'))
     .then((users) => res.send(users))
-    .catch(() => next({
-      status: STATUS_CODES.INTERNAL_SERVER_ERROR,
-      message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
-    }));
-};
-
-// Создать пользователя
-export const createUser = (req: Request, res: Response, next: NextFunction) => {
-  const { name, about, avatar } = req.body;
-
-  User.create({
-    name, about, avatar, owner: req.user._id,
-  })
-    .then((user) => res.status(STATUS_CODES.CREATED).send(user))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        next({ status: STATUS_CODES.BAD_REQUEST, message: ERROR_MESSAGES.BAD_REQUEST });
-      } else {
-        next({
-          status: STATUS_CODES.INTERNAL_SERVER_ERROR,
-          message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
-        });
-      }
-    });
+    .catch(next);
 };
 
 // Обновить профиль пользователя
@@ -101,22 +85,13 @@ export const updateUserProfile = (req: Request, res: Response, next: NextFunctio
     { _id: req.user._id },
     { name, about },
     { new: true, runValidators: true },
-  )
-    .then((user) => {
-      if (user) {
-        res.send(user);
-      } else {
-        next({ status: STATUS_CODES.NOT_FOUND, message: ERROR_MESSAGES.USER_NOT_FOUND });
-      }
-    })
+  ).orFail(new NotFoundError(ERROR_MESSAGES.USER_NOT_FOUND))
+    .then((user) => res.send(user))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        next({ status: STATUS_CODES.BAD_REQUEST, message: ERROR_MESSAGES.BAD_REQUEST });
+        next(new BadRequestError(ERROR_MESSAGES.BAD_REQUEST));
       } else {
-        next({
-          status: STATUS_CODES.INTERNAL_SERVER_ERROR,
-          message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
-        });
+        next(err);
       }
     });
 };
@@ -128,16 +103,13 @@ export const updateUserAvatar = (req: Request, res: Response, next: NextFunction
     { _id: req.user._id },
     { avatar },
     { new: true, runValidators: true },
-  )
+  ).orFail(new NotFoundError(ERROR_MESSAGES.USER_NOT_FOUND))
     .then((user) => res.send(user))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        next({ status: STATUS_CODES.BAD_REQUEST, message: ERROR_MESSAGES.BAD_REQUEST });
+        next(new BadRequestError(ERROR_MESSAGES.INVALID_URL));
       } else {
-        next({
-          status: STATUS_CODES.INTERNAL_SERVER_ERROR,
-          message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
-        });
+        next(err);
       }
     });
 };

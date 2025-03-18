@@ -1,5 +1,7 @@
 import mongoose, { Model, Document, ObjectId } from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { ERROR_MESSAGES, STATUS_CODES } from '../utils/constants';
+import { CustomError } from '../errors/CustomError';
 
 interface IUser extends Document {
   _id: ObjectId;
@@ -19,10 +21,6 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    validate: {
-      validator: (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
-      message: 'Неверный формат email',
-    },
   },
   password: {
     type: String,
@@ -43,28 +41,24 @@ const userSchema = new mongoose.Schema({
   avatar: {
     type: String,
     required: false,
-    default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604386755.png',
+    default: `https://pictures.s3.yandex.net/resources/images/avatar${Math.random()}`,
   },
 });
 
 userSchema.index({ email: 1 }, { unique: true }); // Создаём уникальный индекс для email
 
 userSchema.static('findUserByCredentials', function findUserByCredentials(email: string, password: string) {
-  return this.findOne({ email })
-    .then((user:IUser) => {
-      if (!user) {
-        return Promise.reject(new Error('Неправильные почта или пароль'));
-      }
+  // eslint-disable-next-line max-len
+  return this.findOne({ email }).orFail(new CustomError(STATUS_CODES.UNAUTHORIZED, ERROR_MESSAGES.INVALID_CREDENTIALS))
+    .then((user:IUser) => bcrypt.compare(password, user.password)
+      .then((matched) => {
+        if (!matched) {
+          // eslint-disable-next-line max-len
+          return Promise.reject(new CustomError(STATUS_CODES.UNAUTHORIZED, ERROR_MESSAGES.INVALID_CREDENTIALS));
+        }
 
-      return bcrypt.compare(password, user.password)
-        .then((matched) => {
-          if (!matched) {
-            return Promise.reject(new Error('Неправильные почта или пароль'));
-          }
-
-          return user;
-        });
-    });
+        return user;
+      }));
 });
 
 export default mongoose.model<IUser, UserModel>('user', userSchema);

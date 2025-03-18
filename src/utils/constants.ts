@@ -7,6 +7,7 @@ export const STATUS_CODES = {
   NOT_FOUND: 404,
   INTERNAL_SERVER_ERROR: 500,
   UNAUTHORIZED: 401,
+  CONFLICT: 409,
 } as const;
 
 export const ERROR_MESSAGES = {
@@ -20,5 +21,10 @@ export const ERROR_MESSAGES = {
   UNAUTHORIZED: 'Необходима авторизация',
   INVALID_EMAIL: 'Неверный формат email',
   INVALID_PASSWORD: 'Неверный пароль',
+  INVALID_CREDENTIALS: 'Неправильные почта или пароль',
   FORBIDDEN: 'Недостаточно прав для удаления карточки',
+  CONFLICT: 'Пользователь с таким email уже существует',
+  USER_COLLECTION_NOT_FOUND: 'Коллекция пользователей не найдена',
+  CARD_COLLECTION_NOT_FOUND: 'Коллекция карточек не найдена',
+  INVALID_URL: 'Неправильный url avatar',
 } as const;

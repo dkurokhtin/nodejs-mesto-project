@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
+import { NotFoundError } from '../errors/NotFoundError';
 
 export const notFoundHandler = (req: Request, res: Response, next: NextFunction) => {
-  next({ status: 404, message: 'Страница не найдена' });
+  next(new NotFoundError('Страница не найдена'));
 };
 
 export default notFoundHandler;
