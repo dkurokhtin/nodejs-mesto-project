@@ -7,6 +7,7 @@ import { BadRequestError } from '../errors/BadRequest';
 import { ConflictError } from '../errors/ConflictError';
 import { NotFoundError } from '../errors/NotFoundError';
 import { CustomError } from '../errors/CustomError';
+import { ForbiddenError } from '../errors/ForbiddenError';
 
 export const login = (req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body;
@@ -84,9 +85,14 @@ export const updateUserProfile = (req: Request, res: Response, next: NextFunctio
   User.findByIdAndUpdate(
     { _id: req.user._id },
     { name, about },
-    { new: true, runValidators: true },
+    { new: true, runValidators: true, select: '-password' },
   ).orFail(new NotFoundError(ERROR_MESSAGES.USER_NOT_FOUND))
-    .then((user) => res.send(user))
+    .then((user) => {
+      if (user.id !== req.user._id) {
+        next(new ForbiddenError(ERROR_MESSAGES.FORBIDDEN));
+      }
+      res.send(user);
+    })
     .catch((err) => {
       if (err.name === 'ValidationError') {
         next(new BadRequestError(ERROR_MESSAGES.BAD_REQUEST));
@@ -102,9 +108,14 @@ export const updateUserAvatar = (req: Request, res: Response, next: NextFunction
   User.findByIdAndUpdate(
     { _id: req.user._id },
     { avatar },
-    { new: true, runValidators: true },
+    { new: true, runValidators: true, select: '-password' },
   ).orFail(new NotFoundError(ERROR_MESSAGES.USER_NOT_FOUND))
-    .then((user) => res.send(user))
+    .then((user) => {
+      if (user.id !== req.user._id) {
+        next(new ForbiddenError(ERROR_MESSAGES.FORBIDDEN));
+      }
+      res.send(user);
+    })
     .catch((err) => {
       if (err.name === 'ValidationError') {
         next(new BadRequestError(ERROR_MESSAGES.INVALID_URL));

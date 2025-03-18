@@ -39,8 +39,9 @@ export const deleteCard = (req: Request, res: Response, next: NextFunction) => {
     .then((card) => {
       if (card.owner.toString() !== req.user._id) {
         next(new ForbiddenError(ERROR_MESSAGES.FORBIDDEN));
+      } else {
+        Card.deleteOne({ _id: card._id });
       }
-      return Card.deleteOne({ _id: card._id });
     })
     .then(() => res.send({ message: 'Карточка успешно удалена' }))
     .catch(next);
@@ -55,13 +56,9 @@ export const addLike = (req: Request, res: Response, next: NextFunction) => {
     { _id: cardId },
     { $addToSet: { likes: userId } },
     { new: true },
-  )
+  ).orFail(new NotFoundError(ERROR_MESSAGES.CARD_NOT_FOUND))
     .then((card) => {
-      if (card) {
-        res.send(card);
-      } else {
-        next(new NotFoundError(ERROR_MESSAGES.INVALID_CARD_ID));
-      }
+      res.send(card);
     })
     .catch(next);
 };
@@ -77,11 +74,7 @@ export const deleteLike = (req: Request, res:Response, next: NextFunction) => {
     { new: true },
   )
     .then((card) => {
-      if (card) {
-        res.send(card);
-      } else {
-        next(new NotFoundError(ERROR_MESSAGES.INVALID_CARD_ID));
-      }
+      res.send(card);
     })
     .catch(next);
 };

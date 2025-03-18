@@ -1,9 +1,9 @@
 import express from 'express';
 import mongoose from 'mongoose';
-
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import { errors } from 'celebrate';
 import errorHandler from './middlewares/errorHandler';
 import router from './routes/routes';
 import { requestLogger, errorLogger } from './middlewares/logger';
@@ -27,6 +27,7 @@ app.use(requestLogger); // подключаем логер запросов
 
 app.use('/', router); // запускаем роутер
 app.use(errorLogger); // подключаем логер ошибок
+app.use(errors()); // подключаем middleware для обработки ошибок
 app.use(errorHandler); // подключаем middleware для обработки ошибок
 app.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
