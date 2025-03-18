@@ -1,10 +1,9 @@
-import mongoose, { Model, Document, ObjectId } from 'mongoose';
+import mongoose, { Model, Document } from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { ERROR_MESSAGES, STATUS_CODES } from '../utils/constants';
 import { CustomError } from '../errors/CustomError';
 
 interface IUser extends Document {
-  _id: ObjectId;
   email: string;
   password: string;
   name?: string;
