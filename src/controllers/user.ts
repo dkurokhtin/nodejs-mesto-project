@@ -4,7 +4,6 @@ import jwt from 'jsonwebtoken';
 import User from '../models/user';
 import { STATUS_CODES, ERROR_MESSAGES } from '../utils/constants';
 import { BadRequestError } from '../errors/BadRequest';
-import { ConflictError } from '../errors/ConflictError';
 import { NotFoundError } from '../errors/NotFoundError';
 import { CustomError } from '../errors/CustomError';
 import { ForbiddenError } from '../errors/ForbiddenError';
@@ -39,7 +38,7 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        next(new ConflictError(ERROR_MESSAGES.CONFLICT));
+        next(new BadRequestError(ERROR_MESSAGES.BAD_REQUEST));
       } else {
         next(err);
       }
@@ -50,7 +49,7 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
 export const getUserById = (req: Request, res: Response, next: NextFunction) => {
   const { userId } = req.params;
 
-  User.findById(userId).select('-password').orFail(new NotFoundError(ERROR_MESSAGES.USER_NOT_FOUND))
+  User.findById(userId).orFail(new NotFoundError(ERROR_MESSAGES.USER_NOT_FOUND))
     .then((user) => {
       res.send(user);
     })
@@ -65,7 +64,7 @@ export const getUserById = (req: Request, res: Response, next: NextFunction) => 
 
 export const getCurrentUser = (req: Request, res: Response, next: NextFunction) => {
   const { _id } = req.user;
-  User.findById(_id).select('-password').orFail(new NotFoundError(ERROR_MESSAGES.USER_NOT_FOUND))
+  User.findById(_id).orFail(new NotFoundError(ERROR_MESSAGES.USER_NOT_FOUND))
     .then((user) => {
       res.send(user);
     })
@@ -74,7 +73,7 @@ export const getCurrentUser = (req: Request, res: Response, next: NextFunction) 
 
 // Получить всех пользователей
 export const getAllUsers = (req: Request, res: Response, next: NextFunction) => {
-  User.find({}).select('-password').orFail(new CustomError(STATUS_CODES.NOT_FOUND, 'Коллекция пользователей не найдена'))
+  User.find({}).orFail(new CustomError(STATUS_CODES.NOT_FOUND, 'Коллекция пользователей не найдена'))
     .then((users) => res.send(users))
     .catch(next);
 };
@@ -85,7 +84,7 @@ export const updateUserProfile = (req: Request, res: Response, next: NextFunctio
   User.findByIdAndUpdate(
     { _id: req.user._id },
     { name, about },
-    { new: true, runValidators: true, select: '-password' },
+    { new: true, runValidators: true },
   ).orFail(new NotFoundError(ERROR_MESSAGES.USER_NOT_FOUND))
     .then((user) => {
       if (user.id !== req.user._id) {
@@ -108,7 +107,7 @@ export const updateUserAvatar = (req: Request, res: Response, next: NextFunction
   User.findByIdAndUpdate(
     { _id: req.user._id },
     { avatar },
-    { new: true, runValidators: true, select: '-password' },
+    { new: true, runValidators: true },
   ).orFail(new NotFoundError(ERROR_MESSAGES.USER_NOT_FOUND))
     .then((user) => {
       if (user.id !== req.user._id) {

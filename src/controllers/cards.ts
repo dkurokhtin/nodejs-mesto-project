@@ -34,16 +34,15 @@ export const createCard = (req: Request, res:Response, next: NextFunction) => {
 
 // Удалить карточку
 export const deleteCard = (req: Request, res: Response, next: NextFunction) => {
-  Card.findById(req.params.cardId)
+  Card.findByIdAndDelete(req.params.cardId)
     .orFail(new NotFoundError(ERROR_MESSAGES.CARD_NOT_FOUND))
     .then((card) => {
       if (card.owner.toString() !== req.user._id) {
         next(new ForbiddenError(ERROR_MESSAGES.FORBIDDEN));
       } else {
-        Card.deleteOne({ _id: card._id });
+        res.send({ message: 'Карточка успешно удалена' });
       }
     })
-    .then(() => res.send({ message: 'Карточка успешно удалена' }))
     .catch(next);
 };
 
@@ -72,7 +71,7 @@ export const deleteLike = (req: Request, res:Response, next: NextFunction) => {
     { _id: cardId },
     { $pull: { likes: userId } },
     { new: true },
-  )
+  ).orFail(new NotFoundError(ERROR_MESSAGES.CARD_NOT_FOUND))
     .then((card) => {
       res.send(card);
     })

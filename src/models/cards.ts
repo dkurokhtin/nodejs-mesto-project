@@ -25,10 +25,6 @@ const cardSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
-  about: {
-    type: String,
-    required: true,
-  },
 });
 
 // создаём модель и экспортируем её

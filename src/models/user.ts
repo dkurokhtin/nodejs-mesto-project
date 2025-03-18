@@ -25,6 +25,7 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true,
+    select: false,
   },
   name: {
     type: String,
@@ -49,7 +50,7 @@ userSchema.index({ email: 1 }, { unique: true }); // Создаём уникал
 
 userSchema.static('findUserByCredentials', function findUserByCredentials(email: string, password: string) {
   // eslint-disable-next-line max-len
-  return this.findOne({ email }).select('-password').orFail(new CustomError(STATUS_CODES.UNAUTHORIZED, ERROR_MESSAGES.INVALID_CREDENTIALS))
+  return this.findOne({ email }).select('+password').orFail(new CustomError(STATUS_CODES.UNAUTHORIZED, ERROR_MESSAGES.INVALID_CREDENTIALS))
     .then((user:IUser) => bcrypt.compare(password, user.password)
       .then((matched) => {
         if (!matched) {
